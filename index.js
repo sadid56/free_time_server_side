@@ -51,6 +51,24 @@ async function run() {
       res.json(post);
     })
 
+    app.post("/feeds/comment/:id", async(req, res)=>{
+      try{
+        const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const commnet = req.body;
+      const post = await feedsCollection.findOne(filter)
+      if (!post) {
+        return res.status(404).send({ message: "Post not found" });
+      }
+      post?.comments.push(commnet)
+      await feedsCollection.updateOne(filter, {$set:post})
+      res.json(post)
+      }catch(err){
+        console.log('comment post err backend-->', err);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    })
+
     //profiles related
     app.post("/profiles", async(req, res)=>{
       const profile = req.body;
