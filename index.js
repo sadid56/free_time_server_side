@@ -33,8 +33,39 @@ async function run() {
 
     //*operations
     //feeds related
+    app.post("/feeds", async(req, res)=>{
+      const post = req.body;
+      const result = await feedsCollection.insertOne(post)
+      res.send(result)
+    })
+
+    app.patch("/feeds/:id", async(req, res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const post = req.body;
+      const updatePost = {
+        $set:{
+          article: post.article,
+          image: post.image
+        }
+      }
+      const result = await feedsCollection.updateOne(filter, updatePost)
+      res.send(result)
+    })
+
+    app.delete("/feeds/:id", async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const result = await feedsCollection.deleteOne(filter)
+      res.send(result)
+    })
+
     app.get("/feeds", async (req, res) => {
-      const result = await feedsCollection.find().toArray();
+      let query = {}
+      if(req?.query?.email){
+        query = {email: req?.query?.email}
+      }
+      const result = await feedsCollection.find(query).toArray();
       res.send(result);
     });
 
