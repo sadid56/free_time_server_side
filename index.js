@@ -30,6 +30,7 @@ async function run() {
     // collectoins
     const feedsCollection = client.db("free_time").collection("feeds");
     const profileCollection = client.db("free_time").collection("profiles");
+    const videosCollection = client.db("free_time").collection("videos");
 
     //*operations
     //feeds related
@@ -156,6 +157,50 @@ async function run() {
       res.send(result)
     })
 
+    // video post relatred
+    app.post('/videos', async(req,res)=>{
+      const video = req.body;
+      const result = await videosCollection.insertOne(video)
+      res.send(result)
+    })
+
+    app.get('/videos', async(req, res)=>{
+      let query = {}
+      if(req?.query?.email){
+        query = {email: req?.query?.email}
+      }
+      const result = await videosCollection.find(query).toArray()
+      res.send(result)
+    })
+    app.post("/videos/likes/:postId", async(req, res)=>{
+      const postId = req.params.postId;
+      const post = await feedsCollection.findOne({_id:new ObjectId(postId)})
+      if(!post){
+        return res.status(404).send({message: "videos not found"})
+      }
+      post.likes += 1
+      await videosCollection.updateOne({ _id: new ObjectId(postId) }, { $set: post });
+
+      // Send the updated post as the response
+      res.json(post);
+    })
+    app.post("/videos/comment/:id", async(req, res)=>{
+      try{
+        const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const commnet = req.body;
+      const post = await feedsCollection.findOne(filter)
+      if (!post) {
+        return res.status(404).send({ message: "videos not found" });
+      }
+      post?.comments.push(commnet)
+      await videosCollection.updateOne(filter, {$set:post})
+      res.json(post)
+      }catch(err){
+        console.log('comment post err backend-->', err);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
