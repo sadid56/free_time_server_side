@@ -31,6 +31,8 @@ async function run() {
     const feedsCollection = client.db("free_time").collection("feeds");
     const profileCollection = client.db("free_time").collection("profiles");
     const videosCollection = client.db("free_time").collection("videos");
+    const reeelsCollection = client.db("free_time").collection("reels");
+    const notificationsCollection = client.db("free_time").collection("notifications");
 
     //*operations
     //feeds related
@@ -46,8 +48,7 @@ async function run() {
       const post = req.body;
       const updatePost = {
         $set:{
-          article: post.article,
-          image: post.image
+          article: post?.article,
         }
       }
       const result = await feedsCollection.updateOne(filter, updatePost)
@@ -60,6 +61,8 @@ async function run() {
       const result = await feedsCollection.deleteOne(filter)
       res.send(result)
     })
+
+   
 
     app.get("/feeds", async (req, res) => {
       let query = {}
@@ -174,7 +177,7 @@ async function run() {
     })
     app.post("/videos/likes/:postId", async(req, res)=>{
       const postId = req.params.postId;
-      const post = await feedsCollection.findOne({_id:new ObjectId(postId)})
+      const post = await videosCollection.findOne({_id:new ObjectId(postId)})
       if(!post){
         return res.status(404).send({message: "videos not found"})
       }
@@ -189,7 +192,7 @@ async function run() {
         const id = req.params.id;
       const filter = {_id: new ObjectId(id)}
       const commnet = req.body;
-      const post = await feedsCollection.findOne(filter)
+      const post = await videosCollection.findOne(filter)
       if (!post) {
         return res.status(404).send({ message: "videos not found" });
       }
@@ -201,6 +204,94 @@ async function run() {
         res.status(500).send({ message: "Internal server error" });
       }
     })
+
+    app.delete("/videos/:id",async(req, res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const result = await videosCollection.deleteOne(filter)
+      res.send(result)
+    })
+
+    // reels related
+    app.post("/reels", async(req, res)=>{
+      const reels = req.body;
+      const result = await reeelsCollection.insertOne(reels)
+      res.send(result)
+    })
+    app.get("/reels", async(req, res)=>{
+       let query = {}
+       if(req?.query?.email){
+        query = {email: req?.query?.email}
+
+       }
+       const result = await reeelsCollection.find(query).toArray()
+       res.send(result)
+    })
+
+    app.get("/reels/:id", async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const result = await reeelsCollection.findOne(filter)
+      res.send(result)
+    })
+    app.delete("/reels/:id", async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const result = await reeelsCollection.deleteOne(filter)
+      res.send(result)
+    })
+
+    app.post("/reels/comment/:id", async(req, res)=>{
+      try{
+        const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const commnet = req.body;
+      const post = await reeelsCollection.findOne(filter)
+      if (!post) {
+        return res.status(404).send({ message: "videos not found" });
+      }
+      post?.comments.push(commnet)
+      await reeelsCollection.updateOne(filter, {$set:post})
+      res.json(post)
+      }catch(err){
+        console.log('comment post err backend-->', err);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    })
+    
+    app.post("/reels/likes/:postId", async(req, res)=>{
+      const postId = req.params.postId;
+      const post = await reeelsCollection.findOne({_id:new ObjectId(postId)})
+      if(!post){
+        return res.status(404).send({message: "feeds not found"})
+      }
+      post.likes += 1
+      await reeelsCollection.updateOne({ _id: new ObjectId(postId) }, { $set: post });
+
+      // Send the updated post as the response
+      res.json(post);
+    })
+
+    // notifications related
+    app.post("/notification", async(req, res)=>{
+      const notification = req.body;
+      const result = await notificationsCollection.insertOne(notification)
+      res.send(result)
+    })
+    app.get("/notification", async(req, res)=>{
+      const result  = await notificationsCollection.find().toArray()
+      res.send(result)
+    })
+
+    app.delete("/notification/:id", async(req, res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const result= await notificationsCollection.deleteOne(filter)
+      res.send(result)
+    })
+
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
