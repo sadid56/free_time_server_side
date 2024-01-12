@@ -33,6 +33,7 @@ async function run() {
     const videosCollection = client.db("free_time").collection("videos");
     const reeelsCollection = client.db("free_time").collection("reels");
     const notificationsCollection = client.db("free_time").collection("notifications");
+    const postSavedCollection = client.db("free_time").collection("save-post");
 
     //*operations
     //feeds related
@@ -287,6 +288,28 @@ async function run() {
       const id = req.params.id;
       const filter = {_id: new ObjectId(id)}
       const result= await notificationsCollection.deleteOne(filter)
+      res.send(result)
+    })
+
+    // post save related
+    app.post('/post-save', async(req, res)=>{
+      const post = req.body;
+      const result = await postSavedCollection.insertOne(post)
+      res.send(result)
+    })
+    app.get('/post-save', async(req, res)=>{
+      let query = {}
+      if(req?.query?.email){
+        query = {email: req?.query?.email}
+      }
+      const result = await postSavedCollection.find(query).toArray()
+      res.send(result)
+    })
+
+    app.delete("/post-save/:id", async(req, res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await postSavedCollection.deleteOne(query)
       res.send(result)
     })
 
