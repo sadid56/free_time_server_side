@@ -35,8 +35,29 @@ async function run() {
     const notificationsCollection = client.db("free_time").collection("notifications");
     const postSavedCollection = client.db("free_time").collection("save-post");
     const playlistCollection = client.db("free_time").collection("playlist");
+    const usersCollection = client.db("free_time").collection("users");
 
     //*operations
+    //users related
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      // console.log(user, user?.email);
+      const query = { email: user?.email };
+      const isExisting = await usersCollection.findOne(query);
+      if (isExisting) {
+        return res.send({ message: "user already lodded", insertedId: null });
+      }
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+
+    app.get("/users", async (req, res) => {
+      // console.log(req.body);
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+
+
     //feeds related
     app.post("/feeds", async(req, res)=>{
       const post = req.body;
