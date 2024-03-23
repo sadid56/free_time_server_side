@@ -30,11 +30,8 @@ async function run() {
     // collectoins
     const feedsCollection = client.db("free_time").collection("feeds");
     const profileCollection = client.db("free_time").collection("profiles");
-    const videosCollection = client.db("free_time").collection("videos");
     const reeelsCollection = client.db("free_time").collection("reels");
-    const notificationsCollection = client.db("free_time").collection("notifications");
     const postSavedCollection = client.db("free_time").collection("save-post");
-    const playlistCollection = client.db("free_time").collection("playlist");
     const usersCollection = client.db("free_time").collection("users");
 
     //*operations
@@ -57,6 +54,12 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/users/:email", async (req, res) => {
+      const userId = req.params.userId;
+      // const query = {_id: new ObjectId(userId)};
+      const result = await usersCollection.findOne({userId});
+      res.send(result);
+  });  
 
     //feeds related
     app.post("/feeds", async(req, res)=>{
@@ -104,11 +107,20 @@ async function run() {
       }
       post.likes += 1
       await feedsCollection.updateOne({ _id: new ObjectId(postId) }, { $set: post });
+      res.json(post);
+    })
+    app.post("/feeds/Dislikes/:postId", async(req, res)=>{
+      const postId = req.params.postId;
+      const post = await feedsCollection.findOne({_id:new ObjectId(postId)})
+      if(!post){
+        return res.status(404).send({message: "post not found"})
+      }
+      post.likes -= 1
+      await feedsCollection.updateOne({ _id: new ObjectId(postId) }, { $set: post });
 
       // Send the updated post as the response
       res.json(post);
     })
-
     app.post("/feeds/comment/:id", async(req, res)=>{
       try{
         const id = req.params.id;
@@ -183,57 +195,6 @@ async function run() {
       res.send(result)
     })
 
-    // video post relatred
-    app.post('/videos', async(req,res)=>{
-      const video = req.body;
-      const result = await videosCollection.insertOne(video)
-      res.send(result)
-    })
-
-    app.get('/videos', async(req, res)=>{
-      let query = {}
-      if(req?.query?.email){
-        query = {email: req?.query?.email}
-      }
-      const result = await videosCollection.find(query).toArray()
-      res.send(result)
-    })
-    app.post("/videos/likes/:postId", async(req, res)=>{
-      const postId = req.params.postId;
-      const post = await videosCollection.findOne({_id:new ObjectId(postId)})
-      if(!post){
-        return res.status(404).send({message: "videos not found"})
-      }
-      post.likes += 1
-      await videosCollection.updateOne({ _id: new ObjectId(postId) }, { $set: post });
-
-      // Send the updated post as the response
-      res.json(post);
-    })
-    app.post("/videos/comment/:id", async(req, res)=>{
-      try{
-        const id = req.params.id;
-      const filter = {_id: new ObjectId(id)}
-      const commnet = req.body;
-      const post = await videosCollection.findOne(filter)
-      if (!post) {
-        return res.status(404).send({ message: "videos not found" });
-      }
-      post?.comments.push(commnet)
-      await videosCollection.updateOne(filter, {$set:post})
-      res.json(post)
-      }catch(err){
-        console.log('comment post err backend-->', err);
-        res.status(500).send({ message: "Internal server error" });
-      }
-    })
-
-    app.delete("/videos/:id",async(req, res)=>{
-      const id = req.params.id;
-      const filter = {_id: new ObjectId(id)}
-      const result = await videosCollection.deleteOne(filter)
-      res.send(result)
-    })
 
     // reels related
     app.post("/reels", async(req, res)=>{
@@ -294,24 +255,19 @@ async function run() {
       // Send the updated post as the response
       res.json(post);
     })
+    app.post("/reels/Dislikes/:postId", async(req, res)=>{
+      const postId = req.params.postId;
+      const post = await reeelsCollection.findOne({_id:new ObjectId(postId)})
+      if(!post){
+        return res.status(404).send({message: "feeds not found"})
+      }
+      post.likes -= 1
+      await reeelsCollection.updateOne({ _id: new ObjectId(postId) }, { $set: post });
 
-    // notifications related
-    app.post("/notification", async(req, res)=>{
-      const notification = req.body;
-      const result = await notificationsCollection.insertOne(notification)
-      res.send(result)
-    })
-    app.get("/notification", async(req, res)=>{
-      const result  = await notificationsCollection.find().toArray()
-      res.send(result)
+      // Send the updated post as the response
+      res.json(post);
     })
 
-    app.delete("/notification/:id", async(req, res)=>{
-      const id = req.params.id;
-      const filter = {_id: new ObjectId(id)}
-      const result= await notificationsCollection.deleteOne(filter)
-      res.send(result)
-    })
 
     // post save related
     app.post('/post-save', async(req, res)=>{
@@ -334,30 +290,7 @@ async function run() {
       const result = await postSavedCollection.deleteOne(query)
       res.send(result)
     })
-    // playlist related
-    app.post('/playlist', async(req, res)=>{
-      const post = req.body;
-      const result = await playlistCollection.insertOne(post)
-      res.send(result)
-    })
-    app.get('/playlist', async(req, res)=>{
-      let query = {}
-      if(req?.query?.email){
-        query = {email: req?.query?.email}
-      }
-      const result = await playlistCollection.find(query).toArray()
-      res.send(result)
-    })
-
-    app.delete("/playlist/:id", async(req, res)=>{
-      const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
-      const result = await playlistCollection.deleteOne(query)
-      res.send(result)
-    })
-
-
-
+ 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log(
