@@ -5,16 +5,10 @@ const cors = require("cors");
 const app = express();
 
 const port = process.env.PORT || 9000;
-
-//1JL7A5691jeHQNKX
-//free_time
-
 app.use(express.json());
 app.use(cors());
 
-const uri = `mongodb+srv://free_time:1JL7A5691jeHQNKX@cluster0.dzbhwpo.mongodb.net/?retryWrites=true&w=majority`;
-// console.log(process.env.DB_PASS);
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+const uri = process.env.DB_Connect;
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -34,8 +28,6 @@ async function run() {
     const reeelsCollection = client.db("free_time").collection("reels");
     const postSavedCollection = client.db("free_time").collection("save-post");
     const usersCollection = client.db("free_time").collection("users");
-    // const chatsCollection = client.db("free_time").collection("chats");
-    // const messagesCollection = client.db("free_time").collection("messages");
 
     //*operations
     //users related
@@ -64,12 +56,21 @@ async function run() {
       const result = await usersCollection.findOne(query)
       res.send(result)
     })
-    app.get("/users/:email", async (req, res) => {
-      const userId = req.params.userId;
-      // const query = {_id: new ObjectId(userId)};
-      const result = await usersCollection.findOne({ userId });
-      res.send(result);
+    app.get("/single-user", async (req, res) => {
+      const email = req.query.email; // Accessing the 'email' query parameter
+      try {
+        const result = await usersCollection.findOne({ email });
+        if (result) {
+          res.send(result);
+        } else {
+          res.status(404).send("User not found");
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        res.status(500).send("Internal Server Error");
+      }
     });
+    
 
     //feeds related
     app.post("/feeds", async (req, res) => {
@@ -97,80 +98,6 @@ async function run() {
       const result = await feedsCollection.deleteOne(filter);
       res.send(result);
     });
-
-    // messanger related
-    //create chat
-    // app.post("/chats", async (req, res) => {
-    //   try {
-    //     const { senderId, receiverId } = req.body;
-    //     const chatData = { members: [senderId, receiverId] };
-    //     const result = await chatsCollection.insertOne(chatData);
-    //     res.status(201).json(result);
-    //   } catch (err) {
-    //     console.error("Error creating chat:", err);
-    //     res.status(500).json({ error: "Internal server error" });
-    //   }
-    // });
-
-    //get chat  in user wise
-    // app.get("/chats/:userId", async (req, res) => {
-    //   try {
-    //     const userId = req.params.userId;
-    //     const chat = await chatsCollection
-    //       .find({
-    //         members: userId, // Assuming userId is a string
-    //       })
-    //       .toArray();
-
-    //     res.status(200).json(chat);
-    //   } catch (err) {
-    //     res.status(500).json({ error: err.message });
-    //   }
-    // });
-
-    //find chat
-    // app.get("/chats/find/:firstId/:secondId", async (req, res) => {
-    //   try {
-    //     const chat = await chatsCollection.findOne({
-    //       members: { $all: [req.params.firstId, req.params.secondId] },
-    //     });
-    //     res.status(200).json(chat);
-    //   } catch (err) {
-    //     res.status(500).json({ error: err.message });
-    //   }
-    // });
-
-    // message related
-    // app.post("/message", async (req, res) => {
-    //   try {
-    //     const { chatId, senderId, text } = req.body;
-    //     const message = {
-    //       chatId,
-    //       senderId,
-    //       text,
-    //     };
-    //     const result = await messagesCollection.insertOne(message);
-    //     // Extract the inserted message from the result object
-    //     const insertedMessage = result.ops[0];
-    //     res.status(200).json(insertedMessage);
-    //   } catch (err) {
-    //     console.error("Error posting message:", err);
-    //     res.status(500).json({ error: "Internal server error" });
-    //   }
-    // });
-    
-
-    // get messgae
-    // app.get("/messages/:chatId", async (req, res) => {
-    //   const { chatId } = req.params;
-    //   try {
-    //     const result = await messagesCollection.find({ chatId }).toArray();
-    //     res.status(200).json(result);
-    //   } catch (err) {
-    //     res.status(500).json(err);
-    //   }
-    // });
-
     // feeds related
     app.get("/feeds", async (req, res) => {
       let query = {};
