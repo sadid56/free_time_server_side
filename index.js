@@ -50,12 +50,12 @@ async function run() {
     });
 
     // get single user with id
-    app.get("/user/:id", async(req,res)=>{
+    app.get("/user/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
-      const result = await usersCollection.findOne(query)
-      res.send(result)
-    })
+      const query = { _id: new ObjectId(id) };
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    });
     app.get("/single-user", async (req, res) => {
       const email = req.query.email; // Accessing the 'email' query parameter
       try {
@@ -70,7 +70,6 @@ async function run() {
         res.status(500).send("Internal Server Error");
       }
     });
-    
 
     //feeds related
     app.post("/feeds", async (req, res) => {
@@ -106,6 +105,24 @@ async function run() {
       }
       const result = await feedsCollection.find(query).toArray();
       res.send(result);
+    });
+
+    // search feeds
+    app.get("/search", async (req, res) => {
+      const queryParam = req.query.q;
+      try {
+        const result = await feedsCollection
+          .find({
+            $or: [
+              { name: { $regex: queryParam, $options: "i" } },
+              { article: { $regex: queryParam, $options: "i" } },
+            ],
+          })
+          .toArray();
+        res.json(result);
+      } catch (err) {
+        res.status(500).json({ message: "Internal server error" });
+      }
     });
 
     app.post("/feeds/likes/:postId", async (req, res) => {
