@@ -28,6 +28,9 @@ async function run() {
     const reeelsCollection = client.db("free_time").collection("reels");
     const postSavedCollection = client.db("free_time").collection("save-post");
     const usersCollection = client.db("free_time").collection("users");
+    const notificationsCollection = client
+      .db("free_time")
+      .collection("notifications");
 
     //*operations
     //users related
@@ -69,6 +72,41 @@ async function run() {
         console.error("Error fetching user:", error);
         res.status(500).send("Internal Server Error");
       }
+    });
+
+    // notifications related
+    app.post("/notification", async (req, res) => {
+      const notification = req.body;
+      const result = await notificationsCollection.insertOne(notification);
+      res.send(result);
+    });
+    app.get("/notification", async (req, res) => {
+      try {
+        let query = {};
+        if (req.query.email) {
+          query.email = req.query.email;
+        }
+        const result = await notificationsCollection.find(query).toArray();
+        if (!result || result.length === 0) {
+          return res.status(404).send({ message: "No notifications found" });
+        }
+        res.send(result);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+        res
+          .status(500)
+          .send({
+            message: "Error fetching notifications",
+            error: error.message,
+          });
+      }
+    });
+
+    app.delete("/notification/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await notificationsCollection.deleteOne(filter);
+      res.send(result);
     });
 
     //feeds related
