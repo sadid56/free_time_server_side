@@ -108,6 +108,21 @@ async function run() {
       const result = await notificationsCollection.deleteOne(filter);
       res.send(result);
     });
+    // update notification status
+    app.patch('/notification/:id', async(req, res)=>{
+      const PatchId = req.params.id;
+      const query = {_id: new ObjectId(PatchId)}
+      const update = req.body;
+      console.log(req.body);
+      const updateNotification = {
+        $set:{
+          count:update.count,
+          status:update.status
+        }
+      }
+      const result = await notificationsCollection.updateOne(query, updateNotification);
+      res.send(result)
+    })
 
     //feeds related
     app.post("/feeds", async (req, res) => {
@@ -144,6 +159,14 @@ async function run() {
       const result = await feedsCollection.find(query).toArray();
       res.send(result);
     });
+
+   // get single data
+   app.get('/feed/:id', async(req, res)=>{
+    const feedId = req.params.id;
+    const query = {_id: new ObjectId(feedId)};
+    const result = await feedsCollection.findOne(query)
+    res.send(result)
+   })
 
     // search feeds
     app.get("/search", async (req, res) => {
